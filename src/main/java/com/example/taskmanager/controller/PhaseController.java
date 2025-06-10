@@ -7,7 +7,7 @@ import com.example.taskmanager.model.ProjectMember;
 import com.example.taskmanager.repository.PhaseRepository;
 import com.example.taskmanager.repository.UserRepository;
 import com.example.taskmanager.service.UserService;
-
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +22,7 @@ import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/phases")
+@Tag(name = "Phases", description = "Phase management APIs")
 public class PhaseController {
 
     @Autowired

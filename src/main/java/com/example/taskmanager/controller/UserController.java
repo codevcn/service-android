@@ -5,6 +5,7 @@ import com.example.taskmanager.dev.DevLogger;
 import com.example.taskmanager.dto.ApiResponse;
 import com.example.taskmanager.model.User;
 import com.example.taskmanager.repository.UserRepository;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
+@Tag(name = "Users", description = "User management APIs")
 public class UserController {
 	@Autowired
 	private UserRepository userRepository;

@@ -12,6 +12,7 @@ import com.example.taskmanager.repository.ProjectRepository;
 import com.example.taskmanager.repository.PhaseRepository;
 import com.example.taskmanager.repository.ProjectMemberRepository;
 import com.example.taskmanager.repository.UserRepository;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/search")
+@Tag(name = "Search", description = "Search APIs")
 public class SearchController {
 	@Autowired
 	private TaskRepository taskRepository;

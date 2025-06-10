@@ -7,6 +7,7 @@ import com.example.taskmanager.model.User;
 import com.example.taskmanager.repository.NotificationRepository;
 import com.example.taskmanager.repository.UserRepository;
 import com.example.taskmanager.service.NotificationService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/notifications")
+@Tag(name = "Notifications", description = "Notification management APIs")
 public class NotificationController {
 
 	@Autowired

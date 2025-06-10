@@ -10,6 +10,7 @@ import com.example.taskmanager.repository.PhaseRepository;
 import com.example.taskmanager.repository.TaskRepository;
 import com.example.taskmanager.repository.UserRepository;
 import com.example.taskmanager.service.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/tasks")
+@Tag(name = "Tasks", description = "Task management APIs")
 public class TaskController {
 
     @Autowired

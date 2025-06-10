@@ -10,6 +10,7 @@ import com.example.taskmanager.repository.CommentRepository;
 import com.example.taskmanager.repository.TaskRepository;
 import com.example.taskmanager.repository.UserRepository;
 import com.example.taskmanager.repository.ProjectMemberRepository;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/comments")
+@Tag(name = "Comments", description = "Comment management APIs")
 public class CommentController {
 
 	@Autowired

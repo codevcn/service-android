@@ -11,6 +11,7 @@ import com.example.taskmanager.repository.ProjectMemberRepository;
 import com.example.taskmanager.repository.TaskRepository;
 import com.example.taskmanager.repository.UserRepository;
 import com.example.taskmanager.repository.PhaseRepository;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/statistics")
+@Tag(name = "Statistics", description = "Statistics and analytics APIs")
 public class StatisticsController {
 
   @Autowired

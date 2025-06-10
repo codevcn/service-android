@@ -10,6 +10,7 @@ import com.example.taskmanager.repository.PhaseRepository;
 import com.example.taskmanager.repository.ProjectMemberRepository;
 import com.example.taskmanager.repository.TaskRepository;
 import com.example.taskmanager.repository.UserRepository;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/members")
+@Tag(name = "Project Members", description = "Project member management APIs")
 public class MemberController {
 	@Autowired
 	private UserRepository userRepository;
