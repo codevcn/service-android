@@ -1,5 +1,6 @@
 package com.example.taskmanager.controller;
 
+import com.example.taskmanager.dev.DevLogger;
 import com.example.taskmanager.dto.ApiResponse;
 import com.example.taskmanager.dto.UserDTO;
 import com.example.taskmanager.dto.auth.LoginRequest;
@@ -61,6 +62,9 @@ public class AuthController {
 
 	@PostMapping("/login")
 	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+		DevLogger.logToFile("den server");
+		try {
+			
 		Authentication authentication = authenticationManager.authenticate(
 				new UsernamePasswordAuthenticationToken(
 						loginRequest.getUsernameOrEmail(),
@@ -73,10 +77,16 @@ public class AuthController {
 
 		// Create cookie with JWT token
 		ResponseCookie jwtCookie = jwtService.generateJwtCookie(jwt);
+		
 		return ResponseEntity
 				.ok()
 				.header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
 				.body(new ApiResponse("success", UserDTO.fromEntity(user), null));
+		} catch (Exception e) {
+			// TODO: handle exception
+			DevLogger.logToFile("login: "+e.getMessage());
+			return ResponseEntity.badRequest().body(new ApiResponse("error",null,e.getMessage()));
+		}
 	}
 
 	@PostMapping("/logout")
