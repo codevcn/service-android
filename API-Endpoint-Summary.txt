@@ -1,0 +1,64 @@
+Task Management System API Endpoints
+
+1. Authentication
+
+   * POST /auth/signup: Register a new user with username, email, password, and full name.
+   * POST /auth/login: Authenticate a user with username or email and password to obtain a JWT token.
+   * POST /auth/logout: Log out the authenticated user (requires BearerAuth).
+
+2. Project Management
+
+   * GET /projects: Retrieve a list of all projects for the authenticated user (requires BearerAuth).
+   * POST /projects: Create a new project with specified details (requires BearerAuth).
+   * GET /projects/{projectId}: Retrieve details of a specific project by ID (requires BearerAuth).
+   * PUT /projects/{projectId}: Update a specific project by ID (requires BearerAuth).
+   * DELETE /projects/{projectId}: Delete a specific project by ID (requires BearerAuth).
+   * DELETE /projects/{projectId}/leave: Authenticated user leaves the specified project (requires BearerAuth).
+
+3. Phase Management
+
+   * POST /phases: Create a new phase for a project (requires BearerAuth).
+   * GET /phases/project/{projectId}: Retrieve all phases for a specific project by ID (requires BearerAuth).
+   * GET /phases/{id}: Retrieve details of a specific phase by ID (requires BearerAuth).
+   * PUT /phases/{id}: Update a specific phase by ID (requires BearerAuth).
+   * DELETE /phases/{id}: Delete a specific phase by ID (requires BearerAuth).
+
+4. Task Management
+
+   * POST /tasks: Create a new task within a phase (requires BearerAuth).
+   * GET /tasks/phase/{phaseId}: Retrieve all tasks for a specific phase by ID (requires BearerAuth).
+   * GET /tasks/{id}: Retrieve details of a specific task by ID (requires BearerAuth).
+   * PUT /tasks/{id}: Update a specific task by ID (requires BearerAuth).
+   * DELETE /tasks/{id}: Delete a specific task by ID (requires BearerAuth).
+
+5. Comment Management
+
+   * POST /comments/{taskId}/{userId}: Create a new comment for a specific task by a specific user (requires BearerAuth).
+   * GET /comments/task/{taskId}: Retrieve all comments for a specific task by ID (requires BearerAuth).
+   * DELETE /comments/{commentId}: Delete a specific comment by ID (requires BearerAuth).
+
+6. File Management
+
+   * POST /files/upload/{taskId}/{userId}: Upload a file for a specific task by a specific user (requires BearerAuth).
+   * GET /files/task/{taskId}: Retrieve all files for a specific task by ID (requires BearerAuth).
+   * DELETE /files/{fileId}: Delete a specific file by ID (requires BearerAuth).
+
+7. Notification Management
+
+   * GET /notifications: Retrieve all notifications for the authenticated user (requires BearerAuth).
+   * PUT /notifications/{notificationId}/read: Mark a specific notification as read by ID (requires BearerAuth).
+   * DELETE /notifications/{notificationId}: Delete a specific notification by ID (requires BearerAuth).
+
+8. User Management
+
+   * GET /users/me: Retrieve the profile of the authenticated user (requires BearerAuth).
+   * PUT /users/{userId}/profile: Update the profile of a specific user by ID, including full name, email, and avatar (requires BearerAuth).
+   * PUT /users/{userId}/password: Update the password of a specific user by ID (requires BearerAuth).
+   * GET /users/search: Search for users by username or full name using a query parameter (requires BearerAuth).
+
+9. Member Management
+
+   * GET /members/projects/{projectId}: Get all members of a project (requires BearerAuth).
+   * GET /members/{userId}/projects/{projectId}: Get specific member details in a project (requires BearerAuth).
+
+Chua them vao api summary: get task members, general search

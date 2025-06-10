@@ -1,0 +1,225 @@
+package com.example.taskmanager.controller;
+
+import com.example.taskmanager.dev.DevLogger;
+import com.example.taskmanager.dto.ApiResponse;
+import com.example.taskmanager.dto.TaskDTO;
+import com.example.taskmanager.model.Task;
+import com.example.taskmanager.model.Phase;
+import com.example.taskmanager.model.ProjectMember;
+import com.example.taskmanager.repository.PhaseRepository;
+import com.example.taskmanager.repository.TaskRepository;
+import com.example.taskmanager.repository.UserRepository;
+import com.example.taskmanager.service.UserService;
+
+import jakarta.persistence.EntityNotFoundException;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.ArrayList;
+
+@RestController
+@RequestMapping("/api/tasks")
+public class TaskController {
+
+    @Autowired
+    private TaskRepository taskRepository;
+
+    @Autowired
+    private PhaseRepository phaseRepository;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @PostMapping
+    public ResponseEntity<ApiResponse> createTask(@RequestBody(required = true) CreateTaskRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Task taskRequest = request.task();
+        Long projectId = request.projectId();
+
+        var user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        var role = userService.getRoleInProject(user.getId(), projectId);
+        if (role != ProjectMember.Role.Admin) {
+            throw new EntityNotFoundException("User has no permission to create task");
+        }
+
+        // kiểm tra xem có thiếu input không
+        if (taskRequest.getTaskName() == null || taskRequest.getPhase() == null) {
+            throw new IllegalArgumentException("Missing required fields");
+        }
+        if (taskRequest.getPhase().getId() == null) {
+            throw new IllegalArgumentException("Phase ID is required");
+        }
+        if (taskRequest.getOrderIndex() == null) {
+            throw new IllegalArgumentException("Order index is required");
+        }
+
+        Task task = new Task();
+        task.setTaskName(taskRequest.getTaskName());
+        // task.setDescription(taskRequest.getDescription());
+        task.setPhase(taskRequest.getPhase());
+        // task.setAssignedTo(taskRequest.getAssignedTo());
+        // task.setStatus(taskRequest.getStatus());
+        // task.setPriority(taskRequest.getPriority());
+        // task.setDueDate(taskRequest.getDueDate());
+        // task.setAllowSelfAssign(taskRequest.isAllowSelfAssign());
+        task.setOrderIndex(taskRequest.getOrderIndex());
+
+        Task savedTask = taskRepository.save(task);
+        return ResponseEntity
+                .ok(new ApiResponse("success", TaskDTO.fromEntity(savedTask), null));
+    }
+
+    @GetMapping("/phase/{phaseId}")
+    public ResponseEntity<ApiResponse> getTasksByPhase(@PathVariable Long phaseId) {
+        List<Task> tasks = taskRepository.findByPhaseIdOrderByOrderIndexAsc(phaseId);
+        return ResponseEntity.ok(new ApiResponse("success", tasks, null));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse> getTask(@PathVariable Long id) {
+        return taskRepository.findById(id)
+                .map(task -> ResponseEntity
+                        .ok(new ApiResponse("success", TaskDTO.fromEntity(
+                                task), null)))
+                .orElse(ResponseEntity.ok(new ApiResponse("error", "Task not found", null)));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse> updateTask(@PathVariable Long id,
+            @RequestBody(required = false) UpdateTaskRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        DevLogger.logToFile("Update task request: " + request);
+        Task taskRequest = request.task();
+        Task existingTask = taskRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+        Long projectId = request.projectId();
+        var user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        var role = userService.getRoleInProject(user.getId(), projectId);
+        if (role != ProjectMember.Role.Admin) {
+            throw new EntityNotFoundException("User has no permission to update task");
+        }
+
+        if (taskRequest.getTaskName() != null) {
+            existingTask.setTaskName(taskRequest.getTaskName());
+        }
+        if (taskRequest.getDescription() != null) {
+            existingTask.setDescription(taskRequest.getDescription());
+        }
+        if (taskRequest.getPhase() != null) {
+            existingTask.setPhase(taskRequest.getPhase());
+        }
+        if (taskRequest.getAssignedTo() != null) {
+            existingTask.setAssignedTo(taskRequest.getAssignedTo());
+        }
+        if (taskRequest.getStatus() != null) {
+            existingTask.setStatus(taskRequest.getStatus());
+        }
+        if (taskRequest.getPriority() != null) {
+            existingTask.setPriority(taskRequest.getPriority());
+        }
+        if (taskRequest.getDueDate() != null) {
+            existingTask.setDueDate(taskRequest.getDueDate());
+        }
+        if (taskRequest.getOrderIndex() != null) {
+            existingTask.setOrderIndex(taskRequest.getOrderIndex());
+        }
+        existingTask.setAllowSelfAssign(taskRequest.isAllowSelfAssign() || false);
+        taskRepository.save(existingTask);
+        return ResponseEntity
+                .ok(new ApiResponse("success", "Task updated successfully", null));
+
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse> deleteTask(@PathVariable Long id,
+            @RequestParam Long projectId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        var user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        var role = userService.getRoleInProject(user.getId(), projectId);
+        if (role != ProjectMember.Role.Admin) {
+            throw new EntityNotFoundException("User has no permission to delete task");
+        }
+        return taskRepository.findById(id)
+                .map(task -> {
+                    taskRepository.delete(task);
+                    return ResponseEntity.ok(new ApiResponse("success", "Task deleted successfully", null));
+                })
+                .orElse(ResponseEntity.ok(new ApiResponse("error", "Task not found", null)));
+    }
+
+    private void reorderTasksInPhase(Long phaseId, Task taskToMove, int newPosition) {
+        List<Task> tasks = taskRepository.findByPhaseIdOrderByOrderIndexAsc(phaseId);
+        ArrayList<Task> reorderedTasks = new ArrayList<>();
+        for (Task task : tasks) {
+            if (task.getId().equals(taskToMove.getId())) {
+                continue;
+            }
+            reorderedTasks.add(task);
+        }
+        if (newPosition >= 0) {
+            if (newPosition > reorderedTasks.size()) {
+                newPosition = reorderedTasks.size();
+            }
+            reorderedTasks.add(newPosition, taskToMove);
+        }
+        int index = 0;
+        for (Task task : reorderedTasks) {
+            task.setOrderIndex(index);
+            index++;
+        }
+        taskRepository.saveAll(reorderedTasks);
+    }
+
+    @PutMapping("/{taskId}/move")
+    public ResponseEntity<ApiResponse> moveTask(@PathVariable Long taskId, @RequestParam Long phaseId,
+            @RequestParam Long position,
+            @RequestParam Long projectId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        var user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        var role = userService.getRoleInProject(user.getId(), projectId);
+        if (role != ProjectMember.Role.Admin) {
+            throw new EntityNotFoundException("User has no permission to move task");
+        }
+
+        Task taskToMove = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+
+        Phase newPhase = phaseRepository.findById(phaseId)
+                .orElseThrow(() -> new EntityNotFoundException("Phase not found"));
+
+        boolean isSamePhase = taskToMove.getPhase().getId().equals(phaseId);
+        int newPosition = position.intValue();
+
+        if (isSamePhase) {
+            reorderTasksInPhase(phaseId, taskToMove, newPosition);
+        } else {
+            reorderTasksInPhase(taskToMove.getPhase().getId(), taskToMove, -1);
+
+            taskToMove.setPhase(newPhase);
+            taskToMove.setOrderIndex(newPosition);
+            reorderTasksInPhase(phaseId, taskToMove, newPosition);
+        }
+
+        return ResponseEntity.ok(new ApiResponse("success", "Task moved successfully", null));
+    }
+
+    private record CreateTaskRequest(Task task, Long projectId) {
+    }
+
+    private record UpdateTaskRequest(Task task, Long projectId) {
+    }
+}
