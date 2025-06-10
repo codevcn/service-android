@@ -73,7 +73,7 @@ public class AuthController {
 						loginRequest.getPassword()));
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 		UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-		User user = userRepository.findByUsername(userDetails.getUsername())
+		User user = userRepository.findByEmail(userDetails.getUsername())
 				.orElseGet(() -> userRepository.findByEmail(userDetails.getUsername()).orElse(null));
 		String jwt = jwtService.generateToken(userDetails);
 

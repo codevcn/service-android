@@ -46,7 +46,7 @@ public class StatisticsController {
 
   @GetMapping()
   public ResponseEntity<?> getDashboardStatistics(@AuthenticationPrincipal UserDetails userDetails) {
-    User user = userRepository.findByUsername(userDetails.getUsername())
+    User user = userRepository.findByEmail(userDetails.getUsername())
         .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
     // Project statistics

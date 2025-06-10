@@ -32,7 +32,7 @@ public class UserController {
 
 	@GetMapping("/me")
 	public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
-		var user = userRepository.findByUsername(userDetails.getUsername())
+		var user = userRepository.findByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new EntityNotFoundException("User not found"));
 		return ResponseEntity.ok(new ApiResponse("success", UserDTO.fromEntity(user), null));
 	}
@@ -42,7 +42,7 @@ public class UserController {
 			@RequestBody(required = false) UserProfileRequest request,
 			@AuthenticationPrincipal UserDetails userDetails) throws IOException {
 
-		var currentUser = userRepository.findByUsername(userDetails.getUsername())
+		var currentUser = userRepository.findByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new EntityNotFoundException("User not found"));
 
 		String fullname = request.fullname();
@@ -86,7 +86,7 @@ public class UserController {
 			@Valid @RequestBody PasswordUpdateRequest request,
 			@AuthenticationPrincipal UserDetails userDetails) {
 
-		var currentUser = userRepository.findByUsername(userDetails.getUsername())
+		var currentUser = userRepository.findByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new EntityNotFoundException("User not found"));
 
 		// Verify old password
@@ -110,8 +110,7 @@ public class UserController {
 	public ResponseEntity<?> searchUsers(
 			@RequestParam String query,
 			@AuthenticationPrincipal UserDetails userDetails) {
-
-		var currentUser = userRepository.findByUsername(userDetails.getUsername())
+		var currentUser = userRepository.findByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new EntityNotFoundException("User not found"));
 
 		List<User> users = userRepository.findByUsernameContainingOrFullnameContaining(query, query);

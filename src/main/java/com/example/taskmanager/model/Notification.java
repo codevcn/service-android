@@ -23,6 +23,7 @@ public class Notification {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
+    @Column(nullable = false)
     private boolean isRead = false;
 
     @Column(nullable = false)
@@ -40,7 +41,6 @@ public class Notification {
     @JoinColumn(name = "project_id", nullable = true)
     private Project project;
 
-
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -52,5 +52,20 @@ public class Notification {
 
     public enum Action {
         ACCEPT, REJECT, PENDING
+    }
+
+    @Override
+    public String toString() {
+        return "Notification{" +
+                "notificationId=" + notificationId +
+                ", user=" + user +
+                ", sender=" + sender +
+                ", message='" + message + '\'' +
+                ", isRead=" + isRead +
+                ", createdAt=" + createdAt +
+                ", type=" + type +
+                ", action=" + action +
+                ", project=" + project +
+                '}';
     }
 }

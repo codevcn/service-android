@@ -47,7 +47,7 @@ public class TaskController {
         Task taskRequest = request.task();
         Long projectId = request.projectId();
 
-        var user = userRepository.findByUsername(userDetails.getUsername())
+        var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
         var role = userService.getRoleInProject(user.getId(), projectId);
@@ -106,7 +106,7 @@ public class TaskController {
         Task existingTask = taskRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found"));
         Long projectId = request.projectId();
-        var user = userRepository.findByUsername(userDetails.getUsername())
+        var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
         var role = userService.getRoleInProject(user.getId(), projectId);
         if (role != ProjectMember.Role.Admin) {
@@ -148,7 +148,7 @@ public class TaskController {
     public ResponseEntity<ApiResponse> deleteTask(@PathVariable Long id,
             @RequestParam Long projectId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        var user = userRepository.findByUsername(userDetails.getUsername())
+        var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
         var role = userService.getRoleInProject(user.getId(), projectId);
         if (role != ProjectMember.Role.Admin) {
@@ -190,7 +190,7 @@ public class TaskController {
             @RequestParam Long position,
             @RequestParam Long projectId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        var user = userRepository.findByUsername(userDetails.getUsername())
+        var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
         var role = userService.getRoleInProject(user.getId(), projectId);
         if (role != ProjectMember.Role.Admin) {

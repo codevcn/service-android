@@ -1,5 +1,6 @@
 package com.example.taskmanager.service;
 
+import com.example.taskmanager.dev.DevLogger;
 import com.example.taskmanager.dto.NotificationDTO;
 import com.example.taskmanager.model.Notification;
 import com.example.taskmanager.model.Project;
@@ -85,6 +86,11 @@ public class NotificationService {
         }
     }
 
+    @Transactional
+    public void markAllAsRead(Long userId) {
+        notificationRepository.markAllAsReadByUserId(userId);
+    }
+
     // Observer pattern implementation
     public void notifyTaskAssigned(User user, String taskName) {
         createNotification(user, "You have been assigned to task: " + taskName, Notification.Type.NORMAL,
@@ -120,6 +126,7 @@ public class NotificationService {
     public void notifyGeneral(User user, String message) {
         Notification notification = createNotification(user, message, Notification.Type.NORMAL,
                 Notification.Action.PENDING, null, null);
+        DevLogger.logToFile("Notification: " + notification.toString());
         SseEmitter emitter = emitters.get(user.getId());
         if (emitter != null) {
             try {

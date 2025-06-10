@@ -50,7 +50,7 @@ public class FileController {
         try {
             Task task = taskRepository.findById(taskId)
                     .orElseThrow(() -> new RuntimeException("Task not found"));
-            User user = userRepository.findByUsername(userDetails.getUsername())
+            User user = userRepository.findByEmail(userDetails.getUsername())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             String storedFileName = fileStorageService.storeFile(file);
@@ -127,7 +127,7 @@ public class FileController {
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
             // Get current user
-            User user = userRepository.findByUsername(userDetails.getUsername())
+            User user = userRepository.findByEmail(userDetails.getUsername())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Validate file type

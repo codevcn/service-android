@@ -1,5 +1,6 @@
 package com.example.taskmanager.controller;
 
+import com.example.taskmanager.dev.DevLogger;
 import com.example.taskmanager.dto.ApiResponse;
 import com.example.taskmanager.dto.NotificationDTO;
 import com.example.taskmanager.model.Notification;
@@ -43,7 +44,7 @@ public class NotificationController {
 
 	@GetMapping()
 	public ResponseEntity<?> getNotifications(@AuthenticationPrincipal UserDetails userDetails) {
-		var user = userRepository.findByUsername(userDetails.getUsername())
+		var user = userRepository.findByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new EntityNotFoundException("User not found"));
 
 		List<Notification> notifications = notificationRepository.findByUserOrderByCreatedAtDesc(user);
@@ -55,7 +56,7 @@ public class NotificationController {
 	@PutMapping("/{notificationId}/read")
 	public ResponseEntity<?> markAsRead(@PathVariable Long notificationId,
 			@AuthenticationPrincipal UserDetails userDetails) {
-		var user = userRepository.findByUsername(userDetails.getUsername())
+		var user = userRepository.findByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new EntityNotFoundException("User not found"));
 
 		var notification = notificationRepository.findById(notificationId)
@@ -75,7 +76,7 @@ public class NotificationController {
 	@DeleteMapping("/{notificationId}")
 	public ResponseEntity<?> deleteNotification(@PathVariable Long notificationId,
 			@AuthenticationPrincipal UserDetails userDetails) {
-		var user = userRepository.findByUsername(userDetails.getUsername())
+		var user = userRepository.findByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new EntityNotFoundException("User not found"));
 
 		var notification = notificationRepository.findById(notificationId)
@@ -88,6 +89,35 @@ public class NotificationController {
 
 		notificationRepository.delete(notification);
 		return ResponseEntity.ok(new ApiResponse("success", "Notification deleted successfully", null));
+	}
+
+	@PostMapping("/test-notify")
+	public ResponseEntity<?> testNotify(@RequestParam Long userId) {
+		var user = userRepository.findById(userId)
+				.orElseThrow(() -> new EntityNotFoundException("User not found"));
+		notificationService.notifyGeneral(user, "This is a test notification");
+		return ResponseEntity.ok(new ApiResponse("success", "Notification sent successfully", null));
+	}
+
+	// count unread notifications
+	@GetMapping("/count-unread")
+	public ResponseEntity<?> countUnreadNotifications(@AuthenticationPrincipal UserDetails userDetails) {
+		var user = userRepository.findByEmail(userDetails.getUsername())
+				.orElseThrow(() -> new EntityNotFoundException("User not found"));
+		var count = notificationRepository.countByUserAndIsRead(user, false);
+		return ResponseEntity.ok(new ApiResponse("success", new CountUnreadNotificationsDTO(count), null));
+	}
+
+	// mark all notifications as read
+	@PutMapping("/mark-all-as-read")
+	public ResponseEntity<?> markAllAsRead(@AuthenticationPrincipal UserDetails userDetails) {
+		var user = userRepository.findByEmail(userDetails.getUsername())
+				.orElseThrow(() -> new EntityNotFoundException("User not found"));
+		notificationService.markAllAsRead(user.getId());
+		return ResponseEntity.ok(new ApiResponse("success", "All notifications marked as read", null));
+	}
+
+	private record CountUnreadNotificationsDTO(Long count) {
 	}
 
 }

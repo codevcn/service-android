@@ -8,6 +8,7 @@ import com.example.taskmanager.model.Task;
 import com.example.taskmanager.model.User;
 import com.example.taskmanager.repository.PhaseRepository;
 import com.example.taskmanager.repository.ProjectMemberRepository;
+import com.example.taskmanager.repository.ProjectRepository;
 import com.example.taskmanager.repository.TaskRepository;
 import com.example.taskmanager.repository.UserRepository;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,11 +34,13 @@ public class MemberController {
 	private TaskRepository taskRepository;
 	@Autowired
 	private PhaseRepository phaseRepository;
+	@Autowired
+	private ProjectRepository projectRepository;
 
 	@GetMapping("/projects/{projectId}")
 	public ResponseEntity<?> getProjectMembers(@PathVariable Long projectId,
 			@AuthenticationPrincipal UserDetails userDetails) {
-		var user = userRepository.findByUsername(userDetails.getUsername())
+		var user = userRepository.findByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new EntityNotFoundException("User not found"));
 
 		// Check if user is a member of the project
@@ -104,10 +107,40 @@ public class MemberController {
 
 	// remove a member from a project
 	@DeleteMapping("/remove-project-member")
-	public ResponseEntity<?> removeMemberFromProject(@RequestParam Long projectId, @RequestParam Long userId) {
+	public ResponseEntity<?> removeMemberFromProject(@RequestParam Long projectId, @RequestParam Long userId,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		var user = userRepository.findByEmail(userDetails.getUsername())
+				.orElseThrow(() -> new EntityNotFoundException("User not found"));
+		// check if user is the owner of the project
+		if (projectRepository.findByOwnerId(user.getId()).isEmpty()) {
+			throw new EntityNotFoundException("User is not the owner of this project");
+		}
 		ProjectMember projectMember = projectMemberRepository.findByUser_IdAndProject_Id(userId, projectId)
 				.orElseThrow(() -> new EntityNotFoundException("Member not found in this project"));
 		projectMemberRepository.delete(projectMember);
 		return ResponseEntity.ok(new ApiResponse("success", "Member removed from project successfully", null));
+	}
+
+	// change role of a member in a project
+	@PutMapping("/change-role")
+	public ResponseEntity<?> changeRole(@RequestParam Long projectId, @RequestParam Long userId,
+			@RequestParam String role, @AuthenticationPrincipal UserDetails userDetails) {
+		var user = userRepository.findByEmail(userDetails.getUsername())
+				.orElseThrow(() -> new EntityNotFoundException("User not found"));
+		// check if user is the owner of the project
+		if (projectRepository.findByOwnerId(user.getId()).isEmpty()) {
+			throw new EntityNotFoundException("User is not the owner of this project");
+		}
+		ProjectMember projectMember = projectMemberRepository.findByUser_IdAndProject_Id(userId, projectId)
+				.orElseThrow(() -> new EntityNotFoundException("Member not found in this project"));
+		ProjectMember.Role newRole;
+		try {
+			newRole = ProjectMember.Role.valueOf(role);
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException("Invalid role");
+		}
+		projectMember.setRole(newRole);
+		projectMemberRepository.save(projectMember);
+		return ResponseEntity.ok(new ApiResponse("success", "Role changed successfully", null));
 	}
 }

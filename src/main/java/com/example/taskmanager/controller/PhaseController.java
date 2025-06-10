@@ -37,7 +37,7 @@ public class PhaseController {
     @PostMapping
     public ResponseEntity<ApiResponse> createPhase(@Valid @RequestBody Phase phaseRequest,
             @AuthenticationPrincipal UserDetails userDetails) {
-        var user = userRepository.findByUsername(userDetails.getUsername())
+        var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
         var role = userService.getRoleInProject(user.getId(), phaseRequest.getProject().getId());
@@ -79,7 +79,7 @@ public class PhaseController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse> updatePhase(@PathVariable Long id, @Valid @RequestBody Phase phaseRequest,
             @AuthenticationPrincipal UserDetails userDetails, @RequestParam Long projectId) {
-        var user = userRepository.findByUsername(userDetails.getUsername())
+        var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
         var role = userService.getRoleInProject(user.getId(), projectId);
@@ -119,7 +119,7 @@ public class PhaseController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse> deletePhase(@PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
-        var user = userRepository.findByUsername(userDetails.getUsername())
+        var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
         var existingPhase = phaseRepository.findById(id)
@@ -140,7 +140,7 @@ public class PhaseController {
     @PutMapping("/{phaseId}/move")
     public ResponseEntity<ApiResponse> movePhase(@PathVariable Long phaseId, @RequestParam Long position,
             @AuthenticationPrincipal UserDetails userDetails) {
-        var user = userRepository.findByUsername(userDetails.getUsername())
+        var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
         var phase = phaseRepository.findById(phaseId)
