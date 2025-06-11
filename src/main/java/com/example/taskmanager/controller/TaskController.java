@@ -3,10 +3,13 @@ package com.example.taskmanager.controller;
 import com.example.taskmanager.dev.DevLogger;
 import com.example.taskmanager.dto.ApiResponse;
 import com.example.taskmanager.dto.TaskDTO;
+import com.example.taskmanager.dto.TaskMemberDTO;
+import com.example.taskmanager.model.User;
 import com.example.taskmanager.model.Task;
 import com.example.taskmanager.model.Phase;
 import com.example.taskmanager.model.ProjectMember;
 import com.example.taskmanager.repository.PhaseRepository;
+import com.example.taskmanager.repository.ProjectMemberRepository;
 import com.example.taskmanager.repository.TaskRepository;
 import com.example.taskmanager.repository.UserRepository;
 import com.example.taskmanager.service.TaskReminderManager;
@@ -44,6 +47,9 @@ public class TaskController {
 
     @Autowired
     private TaskReminderManager taskReminderManager;
+
+    @Autowired
+    private ProjectMemberRepository projectMemberRepository;
 
     @PostMapping
     public ResponseEntity<ApiResponse> createTask(@RequestBody(required = true) CreateTaskRequest request,
@@ -225,6 +231,24 @@ public class TaskController {
         }
 
         return ResponseEntity.ok(new ApiResponse("success", "Task moved successfully", null));
+    }
+
+    // get task members by task id
+    @GetMapping("/{taskId}/members")
+    public ResponseEntity<ApiResponse> getTaskMembers(@PathVariable Long taskId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+        ArrayList<TaskMemberDTO> members = new ArrayList<>();
+        User userAssignedTo = task.getAssignedTo();
+        if (userAssignedTo == null) {
+            return ResponseEntity.ok(new ApiResponse("success", members, null));
+        }
+        ProjectMember projectMember = projectMemberRepository
+                .findByUser_IdAndProject_Id(userAssignedTo.getId(),
+                        task.getPhase().getProject().getId())
+                .orElseThrow(() -> new EntityNotFoundException("Project member not found"));
+        members.add(TaskMemberDTO.fromEntity(userAssignedTo, projectMember));
+        return ResponseEntity.ok(new ApiResponse("success", members, null));
     }
 
     private record CreateTaskRequest(Task task, Long projectId) {

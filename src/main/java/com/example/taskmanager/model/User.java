@@ -59,6 +59,10 @@ public class User {
         Male, Female, Other
     }
 
+    public enum Role {
+        User
+    }
+
     @Override
     public String toString() {
         return "User{" +
