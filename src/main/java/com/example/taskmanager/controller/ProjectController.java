@@ -11,6 +11,7 @@ import com.example.taskmanager.model.Notification;
 import com.example.taskmanager.repository.ProjectRepository;
 import com.example.taskmanager.repository.UserRepository;
 import com.example.taskmanager.service.NotificationService;
+import com.example.taskmanager.service.ProjectReminderManager;
 import com.example.taskmanager.repository.ProjectMemberRepository;
 import com.example.taskmanager.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
@@ -40,6 +41,8 @@ public class ProjectController {
 	private NotificationService notificationService;
 	@Autowired
 	private UserService userService;
+	@Autowired
+	private ProjectReminderManager projectReminderManager;
 
 	@PostMapping("/projects")
 	public ResponseEntity<?> createProject(@Valid @RequestBody Project project,
@@ -128,6 +131,7 @@ public class ProjectController {
 		}
 		if (projectRequest.getEndDate() != null) {
 			project.setEndDate(projectRequest.getEndDate());
+			projectReminderManager.scheduleReminder(project);
 		}
 
 		var updatedProject = projectRepository.save(project);

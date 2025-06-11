@@ -27,7 +27,8 @@ public class NotificationService {
         GENERAL,
         PROJECT_MEMBER_ADDED,
         TOAST,
-        TASK_REMINDER
+        TASK_REMINDER,
+        PROJECT_REMINDER
     }
 
     public enum ToastType {
@@ -173,6 +174,21 @@ public class NotificationService {
         if (emitter != null) {
             try {
                 emitter.send(SseEmitter.event().name(EventNames.TASK_REMINDER.name())
+                        .data(NotificationDTO.fromEntity(notification)));
+            } catch (IOException e) {
+                emitter.completeWithError(e);
+            }
+        }
+    }
+
+    public void notifyProjectReminder(User user, Project project, int reminderTime) {
+        Notification notification = createNotification(user,
+                "You have a project due in " + reminderTime + " minutes: " + project.getProjectName(),
+                Notification.Type.TASK_REMINDER, null, project, null);
+        SseEmitter emitter = emitters.get(user.getId());
+        if (emitter != null) {
+            try {
+                emitter.send(SseEmitter.event().name(EventNames.PROJECT_REMINDER.name())
                         .data(NotificationDTO.fromEntity(notification)));
             } catch (IOException e) {
                 emitter.completeWithError(e);

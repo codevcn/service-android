@@ -25,7 +25,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 @RestController
@@ -61,7 +60,7 @@ public class TaskController {
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
         var role = userService.getRoleInProject(user.getId(), projectId);
-        if (role != ProjectMember.Role.Admin) {
+        if (role != ProjectMember.Role.Admin && role != ProjectMember.Role.Leader) {
             throw new EntityNotFoundException("User has no permission to create task");
         }
 
@@ -111,7 +110,6 @@ public class TaskController {
     public ResponseEntity<ApiResponse> updateTask(@PathVariable Long id,
             @RequestBody(required = false) UpdateTaskRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-        DevLogger.logToFile("Update task request: " + request);
         Task taskRequest = request.task();
         Task existingTask = taskRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Task not found"));
@@ -119,7 +117,7 @@ public class TaskController {
         var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
         var role = userService.getRoleInProject(user.getId(), projectId);
-        if (role != ProjectMember.Role.Admin) {
+        if (role != ProjectMember.Role.Admin && role != ProjectMember.Role.Leader) {
             throw new EntityNotFoundException("User has no permission to update task");
         }
 
@@ -142,9 +140,6 @@ public class TaskController {
             existingTask.setPriority(taskRequest.getPriority());
         }
         if (taskRequest.getDueDate() != null) {
-            DevLogger.logToFile("Updating due date for task: " + existingTask.getTaskName());
-            DevLogger.logToFile("Current: " + LocalDateTime.now());
-            DevLogger.logToFile("New due date: " + taskRequest.getDueDate());
             existingTask.setDueDate(taskRequest.getDueDate());
             taskReminderManager.scheduleReminder(existingTask);
         }
@@ -165,7 +160,7 @@ public class TaskController {
         var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
         var role = userService.getRoleInProject(user.getId(), projectId);
-        if (role != ProjectMember.Role.Admin) {
+        if (role != ProjectMember.Role.Admin && role != ProjectMember.Role.Leader) {
             throw new EntityNotFoundException("User has no permission to delete task");
         }
         return taskRepository.findById(id)
@@ -207,7 +202,7 @@ public class TaskController {
         var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
         var role = userService.getRoleInProject(user.getId(), projectId);
-        if (role != ProjectMember.Role.Admin) {
+        if (role != ProjectMember.Role.Admin && role != ProjectMember.Role.Leader) {
             throw new EntityNotFoundException("User has no permission to move task");
         }
 
@@ -249,6 +244,16 @@ public class TaskController {
                 .orElseThrow(() -> new EntityNotFoundException("Project member not found"));
         members.add(TaskMemberDTO.fromEntity(userAssignedTo, projectMember));
         return ResponseEntity.ok(new ApiResponse("success", members, null));
+    }
+
+    // mark task as completed
+    @PutMapping("/{id}/mark-as-complete")
+    public ResponseEntity<ApiResponse> markTaskAsCompleted(@PathVariable Long id, @RequestParam String status) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+        task.setStatus(status);
+        taskRepository.save(task);
+        return ResponseEntity.ok(new ApiResponse("success", "Task marked as completed", null));
     }
 
     private record CreateTaskRequest(Task task, Long projectId) {
