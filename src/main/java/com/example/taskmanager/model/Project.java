@@ -16,6 +16,9 @@ public class Project {
     @Column
     private String description;
 
+    @Column(nullable = true)
+    private String background;
+
     @Column
     private String status;
 
@@ -39,6 +42,7 @@ public class Project {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        background = null;
     }
 
     @PreUpdate
@@ -118,4 +122,4 @@ public class Project {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
-} 
+}
