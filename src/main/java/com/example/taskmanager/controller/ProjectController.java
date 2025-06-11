@@ -15,6 +15,7 @@ import com.example.taskmanager.repository.ProjectMemberRepository;
 import com.example.taskmanager.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
+@Tag(name = "Project", description = "Project APIs")
 public class ProjectController {
 	@Autowired
 	private ProjectRepository projectRepository;
