@@ -1,9 +1,11 @@
 package com.example.taskmanager.controller;
 
+import com.example.taskmanager.dev.DevLogger;
 import com.example.taskmanager.dto.ApiResponse;
 import com.example.taskmanager.dto.UserDTO;
 import com.example.taskmanager.dto.auth.LoginRequest;
 import com.example.taskmanager.dto.auth.SignupRequest;
+import com.example.taskmanager.model.User;
 import com.example.taskmanager.repository.UserRepository;
 import com.example.taskmanager.service.JwtService;
 import com.example.taskmanager.service.UserService;
@@ -68,6 +70,8 @@ public class AuthController {
 						loginRequest.getPassword()));
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 		UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+		User user = userRepository.findByEmail(userDetails.getUsername())
+				.orElseGet(() -> userRepository.findByEmail(userDetails.getUsername()).orElse(null));
 		String jwt = jwtService.generateToken(userDetails);
 
 		// Create cookie with JWT token
@@ -76,7 +80,7 @@ public class AuthController {
 		return ResponseEntity
 				.ok()
 				.header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-				.body(new ApiResponse("success", new LoginResponse(jwt), null));
+				.body(new ApiResponse("success", new LoginResponse(UserDTO.fromEntity(user), jwt), null));
 	}
 
 	@PostMapping("/logout")
@@ -87,7 +91,7 @@ public class AuthController {
 				.body(new ApiResponse("success", "Logged out successfully", null));
 	}
 
-	private record LoginResponse(String jwt) {
+	private record LoginResponse(UserDTO user, String jwt) {
 	}
 
 }
