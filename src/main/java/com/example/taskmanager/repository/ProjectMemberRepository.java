@@ -30,4 +30,6 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Lo
 
     // find all project members by user id and user role is leader or member
     List<ProjectMember> findByUser_IdAndRoleIn(Long userId, List<ProjectMember.Role> roles);
+
+    List<ProjectMember> findByProject_IdAndRoleIn(Long projectId, List<ProjectMember.Role> roles);
 }

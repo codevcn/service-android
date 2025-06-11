@@ -4,11 +4,13 @@ import com.example.taskmanager.dto.ApiResponse;
 import com.example.taskmanager.dto.CommentDTO;
 import com.example.taskmanager.dto.CommentRequestDTO;
 import com.example.taskmanager.model.Comment;
+import com.example.taskmanager.model.ProjectMember;
 import com.example.taskmanager.model.Task;
 import com.example.taskmanager.model.User;
 import com.example.taskmanager.repository.CommentRepository;
 import com.example.taskmanager.repository.TaskRepository;
 import com.example.taskmanager.repository.UserRepository;
+import com.example.taskmanager.service.NotificationService;
 import com.example.taskmanager.repository.ProjectMemberRepository;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
@@ -39,6 +41,9 @@ public class CommentController {
 	@Autowired
 	private ProjectMemberRepository projectMemberRepository;
 
+	@Autowired
+	private NotificationService notificationService;
+
 	@PostMapping("/{taskId}/{userId}")
 	public ResponseEntity<ApiResponse> createComment(
 			@PathVariable Long taskId,
@@ -56,6 +61,14 @@ public class CommentController {
 		comment.setIsTaskResult(false);
 
 		commentRepository.save(comment);
+
+		List<ProjectMember> projectMembers = projectMemberRepository
+				.findByProject_IdAndRoleIn(task.getPhase().getProject().getId(),
+						List.of(ProjectMember.Role.Admin, ProjectMember.Role.Leader));
+		for (ProjectMember projectMember : projectMembers) {
+			notificationService.notifyGeneral(projectMember.getUser(), "Task updated: " + task.getTaskName());
+		}
+		notificationService.notifyGeneral(task.getAssignedTo(), "Task updated: " + task.getTaskName());
 
 		// Get project role for the user
 		String role = projectMemberRepository.findByProject_IdAndUser_Id(

@@ -7,11 +7,13 @@ import com.example.taskmanager.dto.TaskMemberDTO;
 import com.example.taskmanager.model.User;
 import com.example.taskmanager.model.Task;
 import com.example.taskmanager.model.Phase;
+import com.example.taskmanager.model.Project;
 import com.example.taskmanager.model.ProjectMember;
 import com.example.taskmanager.repository.PhaseRepository;
 import com.example.taskmanager.repository.ProjectMemberRepository;
 import com.example.taskmanager.repository.TaskRepository;
 import com.example.taskmanager.repository.UserRepository;
+import com.example.taskmanager.service.NotificationService;
 import com.example.taskmanager.service.TaskReminderManager;
 import com.example.taskmanager.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -50,6 +52,9 @@ public class TaskController {
     @Autowired
     private ProjectMemberRepository projectMemberRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     @PostMapping
     public ResponseEntity<ApiResponse> createTask(@RequestBody(required = true) CreateTaskRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -87,6 +92,14 @@ public class TaskController {
         task.setOrderIndex(taskRequest.getOrderIndex());
 
         Task savedTask = taskRepository.save(task);
+
+        Project project = savedTask.getPhase().getProject();
+        List<ProjectMember> projectMembers = projectMemberRepository.findByProject_Id(project.getId());
+        for (ProjectMember projectMember : projectMembers) {
+            notificationService.notifyGeneral(projectMember.getUser(),
+                    "New task created: " + taskRequest.getTaskName());
+        }
+
         return ResponseEntity
                 .ok(new ApiResponse("success", TaskDTO.fromEntity(savedTask), null));
     }
@@ -121,6 +134,8 @@ public class TaskController {
             throw new EntityNotFoundException("User has no permission to update task");
         }
 
+        boolean isUpdatingDueDate = false;
+
         if (taskRequest.getTaskName() != null) {
             existingTask.setTaskName(taskRequest.getTaskName());
         }
@@ -142,15 +157,37 @@ public class TaskController {
         if (taskRequest.getDueDate() != null) {
             existingTask.setDueDate(taskRequest.getDueDate());
             taskReminderManager.scheduleReminder(existingTask);
+            isUpdatingDueDate = true;
+            List<ProjectMember> projectMembers = projectMemberRepository
+                    .findByProject_IdAndRoleIn(existingTask.getPhase().getProject().getId(),
+                            List.of(ProjectMember.Role.Admin, ProjectMember.Role.Leader));
+            for (ProjectMember projectMember : projectMembers) {
+                notificationService.notifyGeneral(projectMember.getUser(),
+                        "Task updated: " + existingTask.getTaskName());
+            }
+            notificationService.notifyGeneral(existingTask.getAssignedTo(),
+                    "Task updated: " + existingTask.getTaskName());
         }
         if (taskRequest.getOrderIndex() != null) {
             existingTask.setOrderIndex(taskRequest.getOrderIndex());
         }
         existingTask.setAllowSelfAssign(taskRequest.isAllowSelfAssign() || false);
         taskRepository.save(existingTask);
+
+        if (!isUpdatingDueDate) {
+            List<ProjectMember> projectMembers = projectMemberRepository
+                    .findByProject_IdAndRoleIn(existingTask.getPhase().getProject().getId(),
+                            List.of(ProjectMember.Role.Admin, ProjectMember.Role.Leader));
+            for (ProjectMember projectMember : projectMembers) {
+                notificationService.notifyGeneral(projectMember.getUser(),
+                        "Task updated: " + existingTask.getTaskName());
+            }
+            notificationService.notifyGeneral(existingTask.getAssignedTo(),
+                    "Task updated: " + existingTask.getTaskName());
+        }
+
         return ResponseEntity
                 .ok(new ApiResponse("success", "Task updated successfully", null));
-
     }
 
     @DeleteMapping("/{id}")
@@ -166,6 +203,15 @@ public class TaskController {
         return taskRepository.findById(id)
                 .map(task -> {
                     taskRepository.delete(task);
+
+                    List<ProjectMember> projectMembers = projectMemberRepository
+                            .findByProject_IdAndRoleIn(task.getPhase().getProject().getId(),
+                                    List.of(ProjectMember.Role.Admin, ProjectMember.Role.Leader));
+                    for (ProjectMember projectMember : projectMembers) {
+                        notificationService.notifyGeneral(projectMember.getUser(),
+                                "Task updated: " + task.getTaskName());
+                    }
+
                     return ResponseEntity.ok(new ApiResponse("success", "Task deleted successfully", null));
                 })
                 .orElse(ResponseEntity.ok(new ApiResponse("error", "Task not found", null)));
@@ -253,6 +299,15 @@ public class TaskController {
                 .orElseThrow(() -> new EntityNotFoundException("Task not found"));
         task.setStatus(status);
         taskRepository.save(task);
+
+        List<ProjectMember> projectMembers = projectMemberRepository
+                .findByProject_IdAndRoleIn(task.getPhase().getProject().getId(),
+                        List.of(ProjectMember.Role.Admin, ProjectMember.Role.Leader));
+        for (ProjectMember projectMember : projectMembers) {
+            notificationService.notifyGeneral(projectMember.getUser(), "Task updated: " + task.getTaskName());
+        }
+        notificationService.notifyGeneral(task.getAssignedTo(), "Task updated: " + task.getTaskName());
+
         return ResponseEntity.ok(new ApiResponse("success", "Task marked as completed", null));
     }
 
