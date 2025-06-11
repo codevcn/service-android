@@ -27,6 +27,9 @@ public class Comment {
     private User user;
 
     @Column(nullable = false)
+    private boolean isTaskResult;
+
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
@@ -36,6 +39,7 @@ public class Comment {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        isTaskResult = false;
     }
 
     @PreUpdate
@@ -76,8 +80,16 @@ public class Comment {
         return user;
     }
 
+    public boolean isTaskResult() {
+        return isTaskResult;
+    }
+
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public void setIsTaskResult(boolean isTaskResult) {
+        this.isTaskResult = isTaskResult;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -95,4 +107,5 @@ public class Comment {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
 }

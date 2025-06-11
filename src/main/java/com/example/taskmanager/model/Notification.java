@@ -33,7 +33,7 @@ public class Notification {
     @Enumerated(EnumType.STRING)
     private Type type;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     @Enumerated(EnumType.STRING)
     private Action action;
 
@@ -41,13 +41,21 @@ public class Notification {
     @JoinColumn(name = "project_id", nullable = true)
     private Project project;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "phase_id", nullable = true)
+    private Phase phase;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "task_id", nullable = true)
+    private Task task;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
 
     public enum Type {
-        PROJECT_INVITATION, NORMAL
+        PROJECT_INVITATION, NORMAL, TASK_REMINDER
     }
 
     public enum Action {
@@ -66,6 +74,8 @@ public class Notification {
                 ", type=" + type +
                 ", action=" + action +
                 ", project=" + project +
+                ", phase=" + phase +
+                ", task=" + task +
                 '}';
     }
 }

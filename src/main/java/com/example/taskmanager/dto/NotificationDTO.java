@@ -17,6 +17,8 @@ public class NotificationDTO {
     private Notification.Action action;
     private Long projectId;
     private Long senderId;
+    private Long taskId;
+    private Long phaseId;
 
     public static NotificationDTO fromEntity(Notification notification) {
         NotificationDTO dto = new NotificationDTO();
@@ -31,6 +33,8 @@ public class NotificationDTO {
         dto.setType(notification.getType());
         dto.setAction(notification.getAction());
         dto.setSenderId(sender != null ? sender.getId() : null);
+        dto.setTaskId(notification.getTask() != null ? notification.getTask().getId() : null);
+        dto.setPhaseId(notification.getPhase() != null ? notification.getPhase().getId() : null);
         return dto;
     }
 }

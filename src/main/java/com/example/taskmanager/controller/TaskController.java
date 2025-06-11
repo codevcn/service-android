@@ -9,6 +9,7 @@ import com.example.taskmanager.model.ProjectMember;
 import com.example.taskmanager.repository.PhaseRepository;
 import com.example.taskmanager.repository.TaskRepository;
 import com.example.taskmanager.repository.UserRepository;
+import com.example.taskmanager.service.TaskReminderManager;
 import com.example.taskmanager.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -21,7 +22,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 @RestController
@@ -40,6 +41,9 @@ public class TaskController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private TaskReminderManager taskReminderManager;
 
     @PostMapping
     public ResponseEntity<ApiResponse> createTask(@RequestBody(required = true) CreateTaskRequest request,
@@ -132,7 +136,11 @@ public class TaskController {
             existingTask.setPriority(taskRequest.getPriority());
         }
         if (taskRequest.getDueDate() != null) {
+            DevLogger.logToFile("Updating due date for task: " + existingTask.getTaskName());
+            DevLogger.logToFile("Current: " + LocalDateTime.now());
+            DevLogger.logToFile("New due date: " + taskRequest.getDueDate());
             existingTask.setDueDate(taskRequest.getDueDate());
+            taskReminderManager.scheduleReminder(existingTask);
         }
         if (taskRequest.getOrderIndex() != null) {
             existingTask.setOrderIndex(taskRequest.getOrderIndex());
@@ -224,4 +232,5 @@ public class TaskController {
 
     private record UpdateTaskRequest(Task task, Long projectId) {
     }
+
 }

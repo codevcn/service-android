@@ -43,29 +43,37 @@ public class SearchController {
 			@AuthenticationPrincipal UserDetails userDetails) {
 		User owner = userRepository.findByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new EntityNotFoundException("User not found"));
-		List<Project> projects = projectRepository.findByOwnerId(owner.getId());
-		ArrayList<Project> filteredProjects = new ArrayList<>();
-		for (Project project : projects) {
+		long ownerId = owner.getId();
+		List<Project> ownedProjects = projectRepository.findByOwnerId(ownerId);
+		List<Project> joinedProjects = projectMemberRepository.findByUser_Id(ownerId).stream()
+				.map(ProjectMember::getProject).toList();
+
+		ArrayList<Project> allProjects = new ArrayList<>(ownedProjects);
+		for (Project project : joinedProjects) {
+			if (!allProjects.stream().anyMatch(p -> p.getId().equals(project.getId()))) {
+				allProjects.add(project);
+			}
+		}
+
+		ArrayList<Project> projectsByKeyword = new ArrayList<>();
+		for (Project project : ownedProjects) {
 			if (project.getProjectName().toLowerCase().contains(keyword.toLowerCase())) {
-				filteredProjects.add(project);
+				projectsByKeyword.add(project);
 			}
 		}
-		List<ProjectMember> projectMembers = projectMemberRepository
-				.findByUser_IdAndProject_ProjectNameContaining(owner.getId(), keyword);
-		for (ProjectMember projectMember : projectMembers) {
-			Project relatedProject = projectMember.getProject();
-			boolean projectExists = projects.stream()
-					.anyMatch(p -> p.getId().equals(relatedProject.getId()));
-			if (!projectExists) {
-				filteredProjects.add(relatedProject);
+		for (Project project : joinedProjects) {
+			if (!allProjects.stream().anyMatch(p -> p.getId().equals(project.getId()))
+					&& project.getProjectName().toLowerCase().contains(keyword.toLowerCase())) {
+				projectsByKeyword.add(project);
 			}
 		}
-		List<Long> projectIds = filteredProjects.stream().map(Project::getId).toList();
-		List<Phase> phases = phaseRepository.findByProjectIdInAndNameContainingKeyword(projectIds, keyword);
-		List<Task> tasks = taskRepository.findByProjectIdsAndTaskNameContainingKeyword(projectIds, keyword);
+
+		List<Long> projectIdsToSearch = allProjects.stream().map(Project::getId).toList();
+		List<Phase> phases = phaseRepository.findByProjectIdInAndNameContainingKeyword(projectIdsToSearch, keyword);
+		List<Task> tasks = taskRepository.findByProjectIdsAndTaskNameContainingKeyword(projectIdsToSearch, keyword);
 
 		List<TaskDTO> taskDTOs = tasks.stream().map(TaskDTO::fromEntity).toList();
-		List<ProjectDTO> projectDTOs = filteredProjects.stream().map(ProjectDTO::fromEntity).toList();
+		List<ProjectDTO> projectDTOs = projectsByKeyword.stream().map(ProjectDTO::fromEntity).toList();
 		List<PhaseDTO> phaseDTOs = phases.stream().map(PhaseDTO::fromEntity).toList();
 
 		SearchDTO searchDTO = new SearchDTO(taskDTOs, projectDTOs, phaseDTOs);

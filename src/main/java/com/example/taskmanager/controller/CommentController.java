@@ -12,6 +12,8 @@ import com.example.taskmanager.repository.UserRepository;
 import com.example.taskmanager.repository.ProjectMemberRepository;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -51,6 +53,7 @@ public class CommentController {
 		comment.setContent(request.content());
 		comment.setTask(task);
 		comment.setUser(user);
+		comment.setIsTaskResult(false);
 
 		commentRepository.save(comment);
 
@@ -70,7 +73,12 @@ public class CommentController {
 			@RequestBody CommentRequestDTO request) {
 		Comment comment = commentRepository.findById(commentId)
 				.orElseThrow(() -> new RuntimeException("Comment not found"));
-		comment.setContent(request.content());
+		if (request.isTaskResult()) {
+			comment.setIsTaskResult(request.isTaskResult());
+		}
+		if (request.content() != null) {
+			comment.setContent(request.content());
+		}
 		commentRepository.save(comment);
 		return ResponseEntity.ok(new ApiResponse("success", "Comment updated successfully", null));
 	}
@@ -112,5 +120,16 @@ public class CommentController {
 		}
 		return ResponseEntity.badRequest()
 				.body(new ApiResponse("error", "Comment not found", null));
+	}
+
+	// mark comment as task result
+	@PutMapping("/{commentId}/mark-as-task-result")
+	public ResponseEntity<?> markCommentAsTaskResult(@PathVariable Long commentId,
+			@AuthenticationPrincipal UserDetails userDetails) {
+		Comment comment = commentRepository.findById(commentId)
+				.orElseThrow(() -> new RuntimeException("Comment not found"));
+		comment.setIsTaskResult(true);
+		commentRepository.save(comment);
+		return ResponseEntity.ok(new ApiResponse("success", "Comment marked as task result", null));
 	}
 }

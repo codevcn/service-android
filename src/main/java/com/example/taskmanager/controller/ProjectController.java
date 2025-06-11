@@ -256,7 +256,8 @@ public class ProjectController {
 	public ResponseEntity<?> getJoinedProjects(@AuthenticationPrincipal UserDetails userDetails) {
 		var user = userRepository.findByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new EntityNotFoundException("User not found"));
-		var projects = projectMemberRepository.findByUser_Id(user.getId()).stream()
+		var projects = projectMemberRepository.findByUser_IdAndRoleIn(user.getId(),
+				List.of(ProjectMember.Role.Member, ProjectMember.Role.Leader)).stream()
 				.map(ProjectMember::getProject)
 				.collect(Collectors.toList());
 		List<ProjectDTO> dtos = projects.stream().map(ProjectDTO::fromEntity).collect(Collectors.toList());
