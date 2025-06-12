@@ -1,5 +1,6 @@
 package com.example.taskmanager.controller;
 
+import com.example.taskmanager.dev.DevLogger;
 import com.example.taskmanager.dto.ApiResponse;
 import com.example.taskmanager.dto.PhaseDTO;
 import com.example.taskmanager.model.Phase;
@@ -16,7 +17,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
 
@@ -86,34 +86,32 @@ public class PhaseController {
         if (role != ProjectMember.Role.Leader && role != ProjectMember.Role.Admin) {
             throw new EntityNotFoundException("User has no permission to update phase");
         }
+        Phase existingPhase = phaseRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Phase not found"));
 
-        return phaseRepository.findById(id)
-                .map(existingPhase -> {
-                    // check if update inputs exist
-                    if (phaseRequest.getPhaseName() != null) {
-                        existingPhase.setPhaseName(phaseRequest.getPhaseName());
-                    }
-                    if (phaseRequest.getDescription() != null) {
-                        existingPhase.setDescription(phaseRequest.getDescription());
-                    }
-                    if (phaseRequest.getStatus() != null) {
-                        existingPhase.setStatus(phaseRequest.getStatus());
-                    }
-                    if (phaseRequest.getStartDate() != null) {
-                        existingPhase.setStartDate(phaseRequest.getStartDate());
-                    }
-                    if (phaseRequest.getEndDate() != null) {
-                        existingPhase.setEndDate(phaseRequest.getEndDate());
-                    }
-                    if (phaseRequest.getOrderIndex() != null) {
-                        existingPhase.setOrderIndex(phaseRequest.getOrderIndex());
-                    }
+        // check if update inputs exist
+        if (phaseRequest.getPhaseName() != null) {
+            existingPhase.setPhaseName(phaseRequest.getPhaseName());
+        }
+        if (phaseRequest.getDescription() != null) {
+            existingPhase.setDescription(phaseRequest.getDescription());
+        }
+        if (phaseRequest.getStatus() != null) {
+            existingPhase.setStatus(phaseRequest.getStatus());
+        }
+        if (phaseRequest.getStartDate() != null) {
+            existingPhase.setStartDate(phaseRequest.getStartDate());
+        }
+        if (phaseRequest.getEndDate() != null) {
+            existingPhase.setEndDate(phaseRequest.getEndDate());
+        }
+        if (phaseRequest.getOrderIndex() != null) {
+            existingPhase.setOrderIndex(phaseRequest.getOrderIndex());
+        }
 
-                    Phase updatedPhase = phaseRepository.save(existingPhase);
-                    return ResponseEntity
-                            .ok(new ApiResponse("success", PhaseDTO.fromEntity(updatedPhase), null));
-                })
-                .orElse(ResponseEntity.ok(new ApiResponse("error", "Phase not found", null)));
+        Phase updatedPhase = phaseRepository.save(existingPhase);
+        return ResponseEntity
+                .ok(new ApiResponse("success", PhaseDTO.fromEntity(updatedPhase), null));
     }
 
     @DeleteMapping("/{id}")

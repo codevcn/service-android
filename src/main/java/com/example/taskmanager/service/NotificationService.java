@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TimerTask;
+import java.util.Timer;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -28,7 +30,8 @@ public class NotificationService {
         PROJECT_MEMBER_ADDED,
         TOAST,
         TASK_REMINDER,
-        PROJECT_REMINDER
+        PROJECT_REMINDER,
+        STREAM_ESTABLISHED
     }
 
     public enum ToastType {
@@ -49,6 +52,19 @@ public class NotificationService {
         emitter.onCompletion(() -> emitters.remove(userId));
         emitter.onTimeout(() -> emitters.remove(userId));
         emitter.onError((e) -> emitters.remove(userId));
+
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    emitter.send(SseEmitter.event().name(EventNames.STREAM_ESTABLISHED.name())
+                            .data(""));
+                } catch (IOException e) {
+                    emitter.completeWithError(e);
+                }
+            }
+        }, 3000);
 
         return emitter;
     }
