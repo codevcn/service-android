@@ -68,7 +68,10 @@ public class CommentController {
 		for (ProjectMember projectMember : projectMembers) {
 			notificationService.notifyGeneral(projectMember.getUser(), "Task updated: " + task.getTaskName());
 		}
-		notificationService.notifyGeneral(task.getAssignedTo(), "Task updated: " + task.getTaskName());
+		User assignedTo = task.getAssignedTo();
+		if (assignedTo != null) {
+			notificationService.notifyGeneral(assignedTo, "Task updated: " + task.getTaskName());
+		}
 
 		// Get project role for the user
 		String role = projectMemberRepository.findByProject_IdAndUser_Id(

@@ -129,7 +129,6 @@ public class NotificationService {
     public void notifyGeneral(User user, String message) {
         Notification notification = createNotification(user, message, Notification.Type.NORMAL,
                 null, null, null);
-        DevLogger.logToFile("Notification: " + notification.toString());
         SseEmitter emitter = emitters.get(user.getId());
         if (emitter != null) {
             try {

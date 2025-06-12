@@ -80,15 +80,13 @@ public class TaskController {
             throw new IllegalArgumentException("Order index is required");
         }
 
+        // Fetch the phase from database to ensure relationships are loaded
+        Phase phase = phaseRepository.findById(taskRequest.getPhase().getId())
+                .orElseThrow(() -> new EntityNotFoundException("Phase not found"));
+
         Task task = new Task();
         task.setTaskName(taskRequest.getTaskName());
-        // task.setDescription(taskRequest.getDescription());
-        task.setPhase(taskRequest.getPhase());
-        // task.setAssignedTo(taskRequest.getAssignedTo());
-        // task.setStatus(taskRequest.getStatus());
-        // task.setPriority(taskRequest.getPriority());
-        // task.setDueDate(taskRequest.getDueDate());
-        // task.setAllowSelfAssign(taskRequest.isAllowSelfAssign());
+        task.setPhase(phase); // Use the fetched phase instead of the request phase
         task.setOrderIndex(taskRequest.getOrderIndex());
 
         Task savedTask = taskRepository.save(task);
@@ -165,8 +163,11 @@ public class TaskController {
                 notificationService.notifyGeneral(projectMember.getUser(),
                         "Task updated: " + existingTask.getTaskName());
             }
-            notificationService.notifyGeneral(existingTask.getAssignedTo(),
-                    "Task updated: " + existingTask.getTaskName());
+            User assignedTo = existingTask.getAssignedTo();
+            if (assignedTo != null) {
+                notificationService.notifyGeneral(assignedTo,
+                        "Task updated: " + existingTask.getTaskName());
+            }
         }
         if (taskRequest.getOrderIndex() != null) {
             existingTask.setOrderIndex(taskRequest.getOrderIndex());
@@ -182,8 +183,11 @@ public class TaskController {
                 notificationService.notifyGeneral(projectMember.getUser(),
                         "Task updated: " + existingTask.getTaskName());
             }
-            notificationService.notifyGeneral(existingTask.getAssignedTo(),
-                    "Task updated: " + existingTask.getTaskName());
+            User assignedTo = existingTask.getAssignedTo();
+            if (assignedTo != null) {
+                notificationService.notifyGeneral(assignedTo,
+                        "Task updated: " + existingTask.getTaskName());
+            }
         }
 
         return ResponseEntity
@@ -306,7 +310,10 @@ public class TaskController {
         for (ProjectMember projectMember : projectMembers) {
             notificationService.notifyGeneral(projectMember.getUser(), "Task updated: " + task.getTaskName());
         }
-        notificationService.notifyGeneral(task.getAssignedTo(), "Task updated: " + task.getTaskName());
+        User assignedTo = task.getAssignedTo();
+        if (assignedTo != null) {
+            notificationService.notifyGeneral(assignedTo, "Task updated: " + task.getTaskName());
+        }
 
         return ResponseEntity.ok(new ApiResponse("success", "Task marked as completed", null));
     }
