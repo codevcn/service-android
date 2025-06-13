@@ -19,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.taskmanager.dev.DevLogger;
 
 import java.util.List;
 import java.util.Optional;
@@ -44,14 +45,15 @@ public class CommentController {
 	@Autowired
 	private NotificationService notificationService;
 
-	@PostMapping("/{taskId}/{userId}")
+	@PostMapping("/{taskId}")
 	public ResponseEntity<ApiResponse> createComment(
 			@PathVariable Long taskId,
-			@PathVariable Long userId,
-			@RequestBody CommentRequestDTO request) {
+			@RequestBody CommentRequestDTO request,
+			@AuthenticationPrincipal UserDetails userDetails) {
+				DevLogger.logToFile("Creating comment for task ID: " + taskId + " by user: " + userDetails.getUsername());
 		Task task = taskRepository.findById(taskId)
 				.orElseThrow(() -> new RuntimeException("Task not found"));
-		User user = userRepository.findById(userId)
+		User user = userRepository.findByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new RuntimeException("User not found"));
 
 		Comment comment = new Comment();
@@ -76,7 +78,7 @@ public class CommentController {
 		// Get project role for the user
 		String role = projectMemberRepository.findByProject_IdAndUser_Id(
 				task.getPhase().getProject().getId(),
-				userId)
+				user.getId())
 				.map(member -> member.getRole().toString())
 				.orElse("GUEST");
 
