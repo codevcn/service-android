@@ -25,4 +25,18 @@ public record CommentDTO(
 				role,
 				comment.isTaskResult());
 	}
+	@Override
+	public String toString() {
+		return "CommentDTO{" +
+				"id=" + id +
+				", content='" + content + '\'' +
+				", taskId=" + taskId +
+				", userId=" + userId +
+				", username='" + username + '\'' +
+				", createdAt=" + createdAt +
+				", updatedAt=" + updatedAt +
+				", userRole='" + userRole + '\'' +
+				", isTaskResult=" + isTaskResult +
+				'}';
+	}
 }

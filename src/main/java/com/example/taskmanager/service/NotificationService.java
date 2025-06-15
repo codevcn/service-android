@@ -72,6 +72,8 @@ public class NotificationService {
     @Transactional
     public Notification createNotification(User user, String message, Notification.Type type,
             Notification.Action action, Project project, User sender) {
+                DevLogger.logToFile("Creating notification for user: " + user.getEmail() + ", message: " + message + ", type: " + type + ", action: " + action + ", project: " + (project != null ? project.getProjectName() : "null") + ", sender: " + (sender != null ? sender.getEmail() : "null"));
+                
         Notification notification = new Notification();
         notification.setUser(user);
         notification.setMessage(message);

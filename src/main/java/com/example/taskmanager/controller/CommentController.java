@@ -111,7 +111,10 @@ public class CommentController {
 
 		// Get all comments for the task with user data pre-fetched
 		List<Comment> comments = commentRepository.findByTaskIdWithUser(taskId);
-
+		for (Comment comment2 : comments) {
+			DevLogger.logToFile("Found " + comment2.toString());
+		}
+	
 		// Get project ID from task
 		Long projectId = task.get().getPhase().getProject().getId();
 
@@ -126,7 +129,10 @@ public class CommentController {
 					return CommentDTO.fromEntity(comment, role);
 				})
 				.collect(Collectors.toList());
-
+		
+for (CommentDTO commentDTO : commentDTOs) {
+	DevLogger.logToFile("Found2 " + commentDTO.toString());	
+}
 		return ResponseEntity.ok(new ApiResponse("success", commentDTOs, null));
 	}
 
@@ -144,9 +150,10 @@ public class CommentController {
 	@PutMapping("/{commentId}/mark-as-task-result")
 	public ResponseEntity<?> markCommentAsTaskResult(@PathVariable Long commentId,
 			@AuthenticationPrincipal UserDetails userDetails) {
+				DevLogger.logToFile("RUNHEAR 147");
 		Comment comment = commentRepository.findById(commentId)
 				.orElseThrow(() -> new RuntimeException("Comment not found"));
-		comment.setIsTaskResult(true);
+		comment.setIsTaskResult(!comment.isTaskResult()); // Toggle the task result status
 		commentRepository.save(comment);
 		return ResponseEntity.ok(new ApiResponse("success", "Comment marked as task result", null));
 	}

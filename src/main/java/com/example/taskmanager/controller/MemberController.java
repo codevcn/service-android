@@ -1,5 +1,6 @@
 package com.example.taskmanager.controller;
 
+import com.example.taskmanager.dev.DevLogger;
 import com.example.taskmanager.dto.ApiResponse;
 import com.example.taskmanager.dto.ProjectMemberDTO;
 import com.example.taskmanager.model.Phase;
@@ -40,6 +41,7 @@ public class MemberController {
 	@GetMapping("/projects/{projectId}")
 	public ResponseEntity<?> getProjectMembers(@PathVariable Long projectId,
 			@AuthenticationPrincipal UserDetails userDetails) {
+		DevLogger.logToFile("call api get project members with projectId: " + projectId + " by user: " + userDetails.getUsername());
 		var user = userRepository.findByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new EntityNotFoundException("User not found"));
 
@@ -74,15 +76,15 @@ public class MemberController {
 		if (task.getAssignedTo() != null) {
 			throw new IllegalArgumentException("Task is already assigned to a user");
 		}
-		// find all phase ids of the project
-		List<Long> phaseIds = phaseRepository.findByProjectIdOrderByOrderIndexAsc(projectId).stream()
-				.map(Phase::getId)
-				.collect(Collectors.toList());
+		// // find all phase ids of the project
+		// List<Long> phaseIds = phaseRepository.findByProjectIdOrderByOrderIndexAsc(projectId).stream()
+		// 		.map(Phase::getId)
+		// 		.collect(Collectors.toList());
 		// Check if user is already assigned to a task in this project
-		Task existingTask = taskRepository.findByAssignedToIdAndPhaseIdIn(userId, phaseIds);
-		if (existingTask != null) {
-			throw new IllegalArgumentException("User is already assigned to a task in this project");
-		}
+		// Task existingTask = taskRepository.findByAssignedToIdAndPhaseIdIn(userId, phaseIds);
+		// if (existingTask != null) {
+		// 	throw new IllegalArgumentException("User is already assigned to a task in this project");
+		// }
 		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new EntityNotFoundException("User not found"));
 		task.setAssignedTo(user);

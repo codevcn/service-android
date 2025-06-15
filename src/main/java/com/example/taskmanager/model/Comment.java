@@ -108,4 +108,16 @@ public class Comment {
         this.updatedAt = updatedAt;
     }
 
+    @Override
+    public String toString() {
+        return "Comment{" +
+                "id=" + id +
+                ", content='" + content + '\'' +
+                ", task=" + (task != null ? task.getId() : null) +
+                ", user=" + (user != null ? user.getId() : null) +
+                ", isTaskResult=" + isTaskResult +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
+    }
 }

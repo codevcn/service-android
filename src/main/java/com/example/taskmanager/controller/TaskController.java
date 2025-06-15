@@ -127,11 +127,12 @@ public class TaskController {
         Long projectId = request.projectId();
         var user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
+                
+                DevLogger.logToFile("NAT--"+user.getId()+" "+projectId);
         var role = userService.getRoleInProject(user.getId(), projectId);
         if (role != ProjectMember.Role.Admin && role != ProjectMember.Role.Leader) {
             throw new EntityNotFoundException("User has no permission to update task");
         }
-
         boolean isUpdatingDueDate = false;
 
         if (taskRequest.getTaskName() != null) {
@@ -156,6 +157,8 @@ public class TaskController {
             existingTask.setDueDate(taskRequest.getDueDate());
             taskReminderManager.scheduleReminder(existingTask);
             isUpdatingDueDate = true;
+            DevLogger.logToFile(existingTask.toString());
+            System.out.print("NAT--"+existingTask.toString());
             List<ProjectMember> projectMembers = projectMemberRepository
                     .findByProject_IdAndRoleIn(existingTask.getPhase().getProject().getId(),
                             List.of(ProjectMember.Role.Admin, ProjectMember.Role.Leader));
@@ -174,10 +177,9 @@ public class TaskController {
         }
         existingTask.setAllowSelfAssign(taskRequest.isAllowSelfAssign() || false);
         taskRepository.save(existingTask);
-
         if (!isUpdatingDueDate) {
             List<ProjectMember> projectMembers = projectMemberRepository
-                    .findByProject_IdAndRoleIn(existingTask.getPhase().getProject().getId(),
+                    .findByProject_IdAndRoleIn(projectId,
                             List.of(ProjectMember.Role.Admin, ProjectMember.Role.Leader));
             for (ProjectMember projectMember : projectMembers) {
                 notificationService.notifyGeneral(projectMember.getUser(),
