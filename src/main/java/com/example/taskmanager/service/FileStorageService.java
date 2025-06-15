@@ -20,13 +20,10 @@ import java.util.UUID;
 @Service
 public class FileStorageService {
     private final Path fileStorageLocation;
-    private final Path androidFileStorageLocation;
 
     @Autowired
-    public FileStorageService(FileStorageProperties fileStorageProperties, FileStoragePropertiesForAndroid fileStoragePropertiesForAndroid) {
+    public FileStorageService(FileStorageProperties fileStorageProperties) {
         this.fileStorageLocation = Paths.get(fileStorageProperties.getUploadDir())
-                .toAbsolutePath().normalize();
-        this.androidFileStorageLocation = Paths.get(fileStoragePropertiesForAndroid.getUploadDirForAndroid())
                 .toAbsolutePath().normalize();
         try {
             Files.createDirectories(this.fileStorageLocation);
@@ -35,7 +32,7 @@ public class FileStorageService {
         }
     }
 
-    public String storeFile(MultipartFile file, boolean isForAndroid) {
+    public String storeFile(MultipartFile file) {
         String originalFileName = file.getOriginalFilename();
         if (originalFileName == null) {
             throw new RuntimeException("Original filename cannot be null");

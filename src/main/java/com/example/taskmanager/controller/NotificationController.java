@@ -65,7 +65,7 @@ public class NotificationController {
 				.orElseThrow(() -> new EntityNotFoundException("User not found"));
 
 		Pageable pageable = PageRequest.of(0, NOTIFICATION_LIMIT);
-		List<Notification> notifications = notificationRepository.findByUserOrderByCreatedAtDescWithLimit(user, pageable);
+		List<Notification> notifications = notificationRepository.findByUserOrderByCreatedAtDescWithLimit(user.getId(), pageable);
 		List<NotificationDTO> dtos = notifications.stream().map(NotificationDTO::fromEntity)
 				.collect(Collectors.toList());
 		return ResponseEntity.ok(new ApiResponse("success", dtos, null));
