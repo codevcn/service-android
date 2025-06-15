@@ -14,6 +14,7 @@ import com.example.taskmanager.repository.ProjectMemberRepository;
 import com.example.taskmanager.repository.TaskRepository;
 import com.example.taskmanager.repository.UserRepository;
 import com.example.taskmanager.service.NotificationService;
+import com.example.taskmanager.service.BackgroundNotificationSerivice;
 import com.example.taskmanager.service.TaskReminderManager;
 import com.example.taskmanager.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -55,6 +56,9 @@ public class TaskController {
     @Autowired
     private NotificationService notificationService;
 
+    @Autowired
+    private BackgroundNotificationSerivice backgroundNotificationSerivice;
+
     @PostMapping
     public ResponseEntity<ApiResponse> createTask(@RequestBody(required = true) CreateTaskRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -91,11 +95,13 @@ public class TaskController {
 
         Task savedTask = taskRepository.save(task);
 
+        String notificationMessage = "New task created: " + taskRequest.getTaskName();
         Project project = savedTask.getPhase().getProject();
         List<ProjectMember> projectMembers = projectMemberRepository.findByProject_Id(project.getId());
         for (ProjectMember projectMember : projectMembers) {
-            notificationService.notifyGeneral(projectMember.getUser(),
-                    "New task created: " + taskRequest.getTaskName());
+            User projectMemberUser = projectMember.getUser();
+            notificationService.notifyGeneral(projectMemberUser, notificationMessage);
+            backgroundNotificationSerivice.addMessage(projectMemberUser.getId(), notificationMessage);
         }
 
         return ResponseEntity
@@ -156,17 +162,19 @@ public class TaskController {
             existingTask.setDueDate(taskRequest.getDueDate());
             taskReminderManager.scheduleReminder(existingTask);
             isUpdatingDueDate = true;
+            String notificationMessage = "Task updated: " + existingTask.getTaskName();
             List<ProjectMember> projectMembers = projectMemberRepository
                     .findByProject_IdAndRoleIn(existingTask.getPhase().getProject().getId(),
                             List.of(ProjectMember.Role.Admin, ProjectMember.Role.Leader));
             for (ProjectMember projectMember : projectMembers) {
-                notificationService.notifyGeneral(projectMember.getUser(),
-                        "Task updated: " + existingTask.getTaskName());
+                User projectMemberUser = projectMember.getUser();
+                notificationService.notifyGeneral(projectMemberUser, notificationMessage);
+                backgroundNotificationSerivice.addMessage(projectMemberUser.getId(), notificationMessage);
             }
             User assignedTo = existingTask.getAssignedTo();
             if (assignedTo != null) {
-                notificationService.notifyGeneral(assignedTo,
-                        "Task updated: " + existingTask.getTaskName());
+                notificationService.notifyGeneral(assignedTo, notificationMessage);
+                backgroundNotificationSerivice.addMessage(assignedTo.getId(), notificationMessage);
             }
         }
         if (taskRequest.getOrderIndex() != null) {

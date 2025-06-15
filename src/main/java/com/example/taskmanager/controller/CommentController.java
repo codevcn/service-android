@@ -12,6 +12,7 @@ import com.example.taskmanager.repository.TaskRepository;
 import com.example.taskmanager.repository.UserRepository;
 import com.example.taskmanager.service.NotificationService;
 import com.example.taskmanager.repository.ProjectMemberRepository;
+import com.example.taskmanager.service.BackgroundNotificationSerivice;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -44,6 +45,9 @@ public class CommentController {
 	@Autowired
 	private NotificationService notificationService;
 
+	@Autowired
+	private BackgroundNotificationSerivice backgroundNotificationSerivice;
+
 	@PostMapping("/{taskId}/{userId}")
 	public ResponseEntity<ApiResponse> createComment(
 			@PathVariable Long taskId,
@@ -62,15 +66,19 @@ public class CommentController {
 
 		commentRepository.save(comment);
 
+		String notificationMessage = "User " + user.getUsername() + " commented on task " + task.getTaskName();
 		List<ProjectMember> projectMembers = projectMemberRepository
 				.findByProject_IdAndRoleIn(task.getPhase().getProject().getId(),
 						List.of(ProjectMember.Role.Admin, ProjectMember.Role.Leader));
 		for (ProjectMember projectMember : projectMembers) {
-			notificationService.notifyGeneral(projectMember.getUser(), "Task updated: " + task.getTaskName());
+			User projectMemberUser = projectMember.getUser();
+			notificationService.notifyGeneral(projectMemberUser, notificationMessage);
+			backgroundNotificationSerivice.addMessage(projectMemberUser.getId(), notificationMessage);
 		}
 		User assignedTo = task.getAssignedTo();
 		if (assignedTo != null) {
-			notificationService.notifyGeneral(assignedTo, "Task updated: " + task.getTaskName());
+			notificationService.notifyGeneral(assignedTo, notificationMessage);
+			backgroundNotificationSerivice.addMessage(assignedTo.getId(), notificationMessage);
 		}
 
 		// Get project role for the user

@@ -8,9 +8,12 @@ import com.example.taskmanager.model.User;
 import com.example.taskmanager.repository.NotificationRepository;
 import com.example.taskmanager.repository.UserRepository;
 import com.example.taskmanager.service.NotificationService;
+import com.example.taskmanager.service.BackgroundNotificationSerivice;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/notifications")
 @Tag(name = "Notifications", description = "Notification management APIs")
 public class NotificationController {
+	private final int NOTIFICATION_LIMIT = 30;
 
 	@Autowired
 	private NotificationRepository notificationRepository;
@@ -32,6 +36,8 @@ public class NotificationController {
 	private UserRepository userRepository;
 	@Autowired
 	private NotificationService notificationService;
+	@Autowired
+	private BackgroundNotificationSerivice backgroundNotificationSerivice;
 
 	@GetMapping("/stream")
 	public SseEmitter streamEvents(@AuthenticationPrincipal UserDetails userDetails) {
@@ -48,6 +54,18 @@ public class NotificationController {
 				.orElseThrow(() -> new EntityNotFoundException("User not found"));
 
 		List<Notification> notifications = notificationRepository.findByUserOrderByCreatedAtDesc(user);
+		List<NotificationDTO> dtos = notifications.stream().map(NotificationDTO::fromEntity)
+				.collect(Collectors.toList());
+		return ResponseEntity.ok(new ApiResponse("success", dtos, null));
+	}
+
+	@GetMapping("/with-limit")
+	public ResponseEntity<?> getNotificationsWithLimit(@AuthenticationPrincipal UserDetails userDetails) {
+		var user = userRepository.findByEmail(userDetails.getUsername())
+				.orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+		Pageable pageable = PageRequest.of(0, NOTIFICATION_LIMIT);
+		List<Notification> notifications = notificationRepository.findByUserOrderByCreatedAtDescWithLimit(user, pageable);
 		List<NotificationDTO> dtos = notifications.stream().map(NotificationDTO::fromEntity)
 				.collect(Collectors.toList());
 		return ResponseEntity.ok(new ApiResponse("success", dtos, null));
@@ -115,6 +133,21 @@ public class NotificationController {
 				.orElseThrow(() -> new EntityNotFoundException("User not found"));
 		notificationService.markAllAsRead(user.getId());
 		return ResponseEntity.ok(new ApiResponse("success", "All notifications marked as read", null));
+	}
+
+	// serve background service
+	@GetMapping("/background-service")
+	public ResponseEntity<?> backgroundService(@AuthenticationPrincipal UserDetails userDetails) {
+		var user = userRepository.findByEmail(userDetails.getUsername())
+				.orElseThrow(() -> new EntityNotFoundException("User not found"));
+		List<String> messages = backgroundNotificationSerivice.popMessagesByUserId(user.getId());
+		if (messages.isEmpty()) {
+			return ResponseEntity.ok(new BackgroundServiceResponse(null, "no-message"));
+		}
+		return ResponseEntity.ok(new BackgroundServiceResponse(messages.get(messages.size() - 1), "success"));
+	}
+
+	private record BackgroundServiceResponse(String message, String status) {
 	}
 
 	private record CountUnreadNotificationsDTO(Long count) {
