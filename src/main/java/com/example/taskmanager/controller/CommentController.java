@@ -20,6 +20,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.example.taskmanager.dev.DevLogger;
 
 import java.util.List;
 import java.util.Optional;
@@ -48,14 +49,15 @@ public class CommentController {
 	@Autowired
 	private BackgroundNotificationSerivice backgroundNotificationSerivice;
 
-	@PostMapping("/{taskId}/{userId}")
+	@PostMapping("/{taskId}")
 	public ResponseEntity<ApiResponse> createComment(
 			@PathVariable Long taskId,
-			@PathVariable Long userId,
-			@RequestBody CommentRequestDTO request) {
+			@RequestBody CommentRequestDTO request,
+			@AuthenticationPrincipal UserDetails userDetails) {
+				DevLogger.logToFile("Creating comment for task ID: " + taskId + " by user: " + userDetails.getUsername());
 		Task task = taskRepository.findById(taskId)
 				.orElseThrow(() -> new RuntimeException("Task not found"));
-		User user = userRepository.findById(userId)
+		User user = userRepository.findByEmail(userDetails.getUsername())
 				.orElseThrow(() -> new RuntimeException("User not found"));
 
 		Comment comment = new Comment();
@@ -84,7 +86,7 @@ public class CommentController {
 		// Get project role for the user
 		String role = projectMemberRepository.findByProject_IdAndUser_Id(
 				task.getPhase().getProject().getId(),
-				userId)
+				user.getId())
 				.map(member -> member.getRole().toString())
 				.orElse("GUEST");
 
@@ -117,7 +119,10 @@ public class CommentController {
 
 		// Get all comments for the task with user data pre-fetched
 		List<Comment> comments = commentRepository.findByTaskIdWithUser(taskId);
-
+		for (Comment comment2 : comments) {
+			DevLogger.logToFile("Found " + comment2.toString());
+		}
+	
 		// Get project ID from task
 		Long projectId = task.get().getPhase().getProject().getId();
 
@@ -132,7 +137,10 @@ public class CommentController {
 					return CommentDTO.fromEntity(comment, role);
 				})
 				.collect(Collectors.toList());
-
+		
+for (CommentDTO commentDTO : commentDTOs) {
+	DevLogger.logToFile("Found2 " + commentDTO.toString());	
+}
 		return ResponseEntity.ok(new ApiResponse("success", commentDTOs, null));
 	}
 
@@ -150,9 +158,10 @@ public class CommentController {
 	@PutMapping("/{commentId}/mark-as-task-result")
 	public ResponseEntity<?> markCommentAsTaskResult(@PathVariable Long commentId,
 			@AuthenticationPrincipal UserDetails userDetails) {
+				DevLogger.logToFile("RUNHEAR 147");
 		Comment comment = commentRepository.findById(commentId)
 				.orElseThrow(() -> new RuntimeException("Comment not found"));
-		comment.setIsTaskResult(true);
+		comment.setIsTaskResult(!comment.isTaskResult()); // Toggle the task result status
 		commentRepository.save(comment);
 		return ResponseEntity.ok(new ApiResponse("success", "Comment marked as task result", null));
 	}

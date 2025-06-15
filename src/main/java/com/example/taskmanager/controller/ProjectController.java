@@ -12,6 +12,7 @@ import com.example.taskmanager.repository.ProjectRepository;
 import com.example.taskmanager.repository.UserRepository;
 import com.example.taskmanager.service.NotificationService;
 import com.example.taskmanager.service.ProjectReminderManager;
+import com.example.taskmanager.repository.PhaseRepository;
 import com.example.taskmanager.repository.ProjectMemberRepository;
 import com.example.taskmanager.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
@@ -43,6 +44,8 @@ public class ProjectController {
 	private UserService userService;
 	@Autowired
 	private ProjectReminderManager projectReminderManager;
+	@Autowired
+	private PhaseRepository phaseRepository;
 
 	@PostMapping("/projects")
 	public ResponseEntity<?> createProject(@Valid @RequestBody Project project,
@@ -152,7 +155,15 @@ public class ProjectController {
 			throw new EntityNotFoundException("User is not the owner of the project");
 		}
 
+		var listPhases = phaseRepository.findByProjectIdOrderByOrderIndexAsc(projectId);
+		if (!listPhases.isEmpty()) {
+			throw new ResourceConflictException("Project has phases, cannot delete");
+		}
+
+
 		projectRepository.delete(project);
+		projectMemberRepository.deleteByProject_Id(projectId);
+		
 		return ResponseEntity.ok(new ApiResponse("success", "Project deleted successfully", null));
 	}
 
@@ -232,6 +243,10 @@ public class ProjectController {
 		projectMember.setUser(user);
 		projectMember.setProject(project);
 		projectMember.setRole(ProjectMember.Role.Member);
+
+		if (projectMemberRepository.existsByUser_IdAndProject_Id(user.getId(), project.getId())) {
+			throw new ResourceConflictException("You are already a member of this project");}
+
 		projectMemberRepository.save(projectMember);
 
 		notificationService.updateAction(notificationId, Notification.Action.ACCEPT);

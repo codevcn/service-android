@@ -83,8 +83,8 @@ public class JwtService {
     public ResponseCookie generateJwtCookie(String token) {
         return ResponseCookie.from(JWT_COOKIE_NAME, token)
                 .httpOnly(true)
-                .secure(JWT_COOKIE_SECURE)
                 .path(JWT_COOKIE_PATH)
+                .secure(JWT_COOKIE_SECURE)
                 .maxAge(JWT_COOKIE_MAX_AGE)
                 .sameSite(JWT_COOKIE_SAME_SITE)
                 .build();

@@ -1,5 +1,6 @@
 package com.example.taskmanager.controller;
 
+import com.example.taskmanager.dev.DevLogger;
 import com.example.taskmanager.dto.ApiResponse;
 import com.example.taskmanager.dto.FileDTO;
 import com.example.taskmanager.model.File;
@@ -105,11 +106,13 @@ public class FileController {
 
     @GetMapping("/download/{fileId}")
     public ResponseEntity<?> downloadFile(@PathVariable Long fileId) {
+        DevLogger.logToFile("Downloading file with ID: " + fileId);
         try {
             File file = fileRepository.findById(fileId)
                     .orElseThrow(() -> new RuntimeException("File not found"));
 
             Resource resource = fileStorageService.loadFileAsResource(file.getFilePath());
+        DevLogger.logToFile("Downloading file name: " + resource.getFilename());
 
             return ResponseEntity.ok()
                     .header("Content-Disposition", "attachment; filename=\"" + file.getFileName() + "\"")

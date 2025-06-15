@@ -71,6 +71,7 @@ public class TaskReminderManager {
     Task task = taskRepository.findById(taskId)
         .orElseThrow(() -> new EntityNotFoundException("Task not found"));
     Project project = task.getPhase().getProject();
+    DevLogger.logToFile("notify task reminder for task: " + task.getTaskName() + " in project: " + project.getId());
     User owner = project.getOwner();
     notificationService.notifyTaskReminder(owner, task, reminderTime, project);
     // notify to user who is assigned to task
